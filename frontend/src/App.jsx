@@ -18,16 +18,12 @@ import Layout
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Income from "./pages/Income";
+import Expenses from "./pages/Expenses";
 
 function Dashboard() {
     return <div>Dashboard</div>;
 }
 
-
-
-function Expenses() {
-    return <div>Expenses</div>;
-}
 
 function Reports() {
     return <div>Reports</div>;

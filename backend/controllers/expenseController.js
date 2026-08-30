@@ -1,17 +1,12 @@
 const Expense = require("../models/Expense");
 
-const validTypes = [
-    "needs",
-    "wants",
-    "savings"
-];
 
 exports.getExpenses = async (req, res) => {
     try {
+
         const {
             startDate,
             endDate,
-            type,
             category
         } = req.query;
 
@@ -20,14 +15,12 @@ exports.getExpenses = async (req, res) => {
         };
 
         if (startDate && endDate) {
+
             filter.date = {
                 $gte: new Date(startDate),
                 $lt: new Date(endDate)
             };
-        }
 
-        if (type) {
-            filter.type = type;
         }
 
         if (category) {
@@ -41,72 +34,116 @@ exports.getExpenses = async (req, res) => {
         res.json(expenses);
 
     } catch (error) {
+
         res.status(500).json({
             message: error.message
         });
+
     }
 };
 
+
 exports.createExpense = async (req, res) => {
+
     try {
+
         const {
+            title,
             amount,
-            description,
             category,
-            type,
             date
         } = req.body;
 
+
         if (
-            !amount ||
-            !description ||
+            !title ||
+            amount === undefined ||
             !category ||
-            !type ||
             !date
         ) {
+
             return res.status(400).json({
                 message:
-                    "All expense fields are required"
+                    "Title, amount, category and date are required"
             });
+
         }
 
-        if (!validTypes.includes(type)) {
+
+        if (Number(amount) <= 0) {
+
             return res.status(400).json({
-                message: "Invalid expense type"
+                message:
+                    "Amount must be greater than zero"
             });
+
         }
+
 
         const expense =
             await Expense.create({
+
                 userId: req.user.id,
+
+                title: title.trim(),
+
                 amount: Number(amount),
-                description,
+
                 category,
-                type,
+
                 date: new Date(date)
+
             });
+
 
         res.status(201).json(expense);
 
     } catch (error) {
+
         res.status(500).json({
             message: error.message
         });
+
     }
 };
 
+
 exports.updateExpense = async (req, res) => {
+
     try {
+
+        const {
+            title,
+            amount,
+            category,
+            date
+        } = req.body;
+
+
         if (
-            !validTypes.includes(
-                req.body.type
-            )
+            !title ||
+            amount === undefined ||
+            !category ||
+            !date
         ) {
+
             return res.status(400).json({
                 message:
-                    "Invalid expense type"
+                    "Title, amount, category and date are required"
             });
+
         }
+
+
+        if (Number(amount) <= 0) {
+
+            return res.status(400).json({
+                message:
+                    "Amount must be greater than zero"
+            });
+
+        }
+
 
         const expense =
             await Expense.findOneAndUpdate(
@@ -115,17 +152,10 @@ exports.updateExpense = async (req, res) => {
                     userId: req.user.id
                 },
                 {
-                    amount: Number(
-                        req.body.amount
-                    ),
-                    description:
-                        req.body.description,
-                    category:
-                        req.body.category,
-                    type: req.body.type,
-                    date: new Date(
-                        req.body.date
-                    )
+                    title: title.trim(),
+                    amount: Number(amount),
+                    category,
+                    date: new Date(date)
                 },
                 {
                     new: true,
@@ -133,44 +163,60 @@ exports.updateExpense = async (req, res) => {
                 }
             );
 
+
         if (!expense) {
+
             return res.status(404).json({
                 message:
                     "Expense not found"
             });
+
         }
+
 
         res.json(expense);
 
     } catch (error) {
+
         res.status(500).json({
             message: error.message
         });
+
     }
 };
 
+
 exports.deleteExpense = async (req, res) => {
+
     try {
+
         const expense =
             await Expense.findOneAndDelete({
                 _id: req.params.id,
                 userId: req.user.id
             });
 
+
         if (!expense) {
+
             return res.status(404).json({
                 message:
                     "Expense not found"
             });
+
         }
 
+
         res.json({
-            message: "Expense deleted"
+            message:
+                "Expense deleted successfully"
         });
 
     } catch (error) {
+
         res.status(500).json({
             message: error.message
         });
+
     }
 };

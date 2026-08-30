@@ -10,9 +10,33 @@ const {
     deleteExpense
 } = require("../controllers/expenseController");
 
-router.get("/", protect, getExpenses);
-router.post("/", protect, createExpense);
-router.put("/:id", protect, updateExpense);
-router.delete("/:id", protect, deleteExpense);
+
+router.get(
+    "/",
+    protect,
+    getExpenses
+);
+
+
+router.post(
+    "/",
+    protect,
+    createExpense
+);
+
+
+router.put(
+    "/:id",
+    protect,
+    updateExpense
+);
+
+
+router.delete(
+    "/:id",
+    protect,
+    deleteExpense
+);
+
 
 module.exports = router;
