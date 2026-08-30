@@ -19,14 +19,10 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Income from "./pages/Income";
 import Expenses from "./pages/Expenses";
+import Reports from "./pages/Reports";
 
 function Dashboard() {
     return <div>Dashboard</div>;
-}
-
-
-function Reports() {
-    return <div>Reports</div>;
 }
 
 function App() {

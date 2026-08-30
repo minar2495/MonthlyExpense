@@ -44,6 +44,11 @@ app.use(
     require("./routes/dashboardRoutes")
 );
 
+app.use(
+    "/api/reports",
+    require("./routes/reportRoutes")
+);
+
 const PORT =
     process.env.PORT || 5000;
 
