@@ -8,7 +8,8 @@ import {
     PiggyBank,
     ChevronLeft,
     ChevronRight,
-    Loader2
+    Loader2,
+    Download
 } from "lucide-react";
 
 import {
@@ -62,6 +63,68 @@ function Reports() {
 
     const [error, setError] =
         useState("");
+
+    const [downloading, setDownloading] = useState(false);
+
+    const downloadExcel = async () => {
+        try {
+            setDownloading(true);
+
+            const response = await api.get(
+                "/reports/excel/monthly",
+                {
+                    params: {
+                        year,
+                        month
+                    },
+                    responseType: "blob"
+                }
+            );
+
+            const blob = new Blob(
+                [response.data],
+                {
+                    type:
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                }
+            );
+
+            const url =
+                window.URL.createObjectURL(blob);
+
+            const link =
+                document.createElement("a");
+
+            link.href = url;
+
+            link.download =
+                `SmartBudget-${year}-${String(month).padStart(2, "0")}.xlsx`;
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            link.remove();
+
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+
+            console.error(
+                "Download failed:",
+                error
+            );
+
+            alert(
+                "Unable to download report."
+            );
+
+        } finally {
+
+            setDownloading(false);
+
+        }
+    };
 
 
     const monthName =
@@ -289,8 +352,7 @@ function Reports() {
                             size={19}
                         />
 
-                    </button>
-
+                    </button>                    
 
                     <div className="min-w-[150px] text-center">
 
@@ -317,7 +379,24 @@ function Reports() {
                     </button>
 
                 </div>
+                <button
+                        onClick={downloadExcel}
+                        disabled={downloading}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-black text-white rounded-xl hover:bg-gray-800 disabled:opacity-50 transition"
+                    >
+                        {downloading ? (
+                            <Loader2
+                                size={18}
+                                className="animate-spin"
+                            />
+                        ) : (
+                            <Download size={18} />
+                        )}
 
+                        {downloading
+                            ? "Preparing..."
+                            : "Download Excel"}
+                    </button>
             </div>
 
 
@@ -485,7 +564,7 @@ function Reports() {
 
                                         <span>
                                             {actual >
-                                            target
+                                                target
                                                 ? `₹${(
                                                     actual -
                                                     target

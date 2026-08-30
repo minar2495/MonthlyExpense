@@ -49,6 +49,11 @@ app.use(
     require("./routes/reportRoutes")
 );
 
+app.use(
+    "/api/reports/excel",
+    require("./routes/excelReportRoutes")
+);
+
 const PORT =
     process.env.PORT || 5000;
 
