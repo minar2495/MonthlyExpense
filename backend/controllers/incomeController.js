@@ -2,10 +2,7 @@ const Income = require("../models/Income");
 
 exports.getIncome = async (req, res) => {
     try {
-        const {
-            startDate,
-            endDate
-        } = req.query;
+        const { startDate, endDate } = req.query;
 
         const filter = {
             userId: req.user.id
@@ -18,8 +15,7 @@ exports.getIncome = async (req, res) => {
             };
         }
 
-        const income = await Income
-            .find(filter)
+        const income = await Income.find(filter)
             .sort({ date: -1 });
 
         res.json(income);
@@ -31,6 +27,7 @@ exports.getIncome = async (req, res) => {
     }
 };
 
+
 exports.createIncome = async (req, res) => {
     try {
         const {
@@ -40,7 +37,7 @@ exports.createIncome = async (req, res) => {
         } = req.body;
 
         if (
-            !amount ||
+            amount === undefined ||
             !source ||
             !date
         ) {
@@ -50,10 +47,17 @@ exports.createIncome = async (req, res) => {
             });
         }
 
+        if (Number(amount) <= 0) {
+            return res.status(400).json({
+                message:
+                    "Amount must be greater than zero"
+            });
+        }
+
         const income = await Income.create({
             userId: req.user.id,
             amount: Number(amount),
-            source,
+            source: source.trim(),
             date: new Date(date)
         });
 
@@ -66,8 +70,33 @@ exports.createIncome = async (req, res) => {
     }
 };
 
+
 exports.updateIncome = async (req, res) => {
     try {
+        const {
+            amount,
+            source,
+            date
+        } = req.body;
+
+        if (
+            amount === undefined ||
+            !source ||
+            !date
+        ) {
+            return res.status(400).json({
+                message:
+                    "Amount, source and date are required"
+            });
+        }
+
+        if (Number(amount) <= 0) {
+            return res.status(400).json({
+                message:
+                    "Amount must be greater than zero"
+            });
+        }
+
         const income =
             await Income.findOneAndUpdate(
                 {
@@ -75,13 +104,9 @@ exports.updateIncome = async (req, res) => {
                     userId: req.user.id
                 },
                 {
-                    amount: Number(
-                        req.body.amount
-                    ),
-                    source: req.body.source,
-                    date: new Date(
-                        req.body.date
-                    )
+                    amount: Number(amount),
+                    source: source.trim(),
+                    date: new Date(date)
                 },
                 {
                     new: true,
@@ -104,6 +129,7 @@ exports.updateIncome = async (req, res) => {
     }
 };
 
+
 exports.deleteIncome = async (req, res) => {
     try {
         const income =
@@ -119,7 +145,7 @@ exports.deleteIncome = async (req, res) => {
         }
 
         res.json({
-            message: "Income deleted"
+            message: "Income deleted successfully"
         });
 
     } catch (error) {

@@ -10,9 +10,33 @@ const {
     deleteIncome
 } = require("../controllers/incomeController");
 
-router.get("/", protect, getIncome);
-router.post("/", protect, createIncome);
-router.put("/:id", protect, updateIncome);
-router.delete("/:id", protect, deleteIncome);
+
+router.get(
+    "/",
+    protect,
+    getIncome
+);
+
+
+router.post(
+    "/",
+    protect,
+    createIncome
+);
+
+
+router.put(
+    "/:id",
+    protect,
+    updateIncome
+);
+
+
+router.delete(
+    "/:id",
+    protect,
+    deleteIncome
+);
+
 
 module.exports = router;

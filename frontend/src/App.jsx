@@ -17,14 +17,13 @@ import Layout
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Income from "./pages/Income";
 
 function Dashboard() {
     return <div>Dashboard</div>;
 }
 
-function Income() {
-    return <div>Income</div>;
-}
+
 
 function Expenses() {
     return <div>Expenses</div>;
