@@ -1,252 +1,344 @@
-import { useEffect, useState } from "react";
+import {
+    useEffect,
+    useState
+} from "react";
 
-import API from "../services/api";
+import {
+    PieChart,
+    Pie,
+    Tooltip,
+    Legend,
+    ResponsiveContainer
+} from "recharts";
 
-function Dashboard() {
-    const [income, setIncome] = useState(0);
-    const [expenses, setExpenses] = useState([]);
+import api from "../services/api";
 
-    const today = new Date();
+import StatCard from "../components/StatCard";
+import BudgetCard from "../components/BudgetCard";
+import MonthSelector from "../components/MonthSelector";
 
-    const month = today.getMonth() + 1;
-    const year = today.getFullYear();
+function getDateRange(
+    month,
+    year
+) {
+    const start =
+        new Date(
+            year,
+            month - 1,
+            1
+        );
 
-    useEffect(() => {
-        loadData();
-    }, []);
+    const end =
+        new Date(
+            year,
+            month,
+            1
+        );
 
-    const loadData = async () => {
-        try {
-            const incomeResponse = await API.get(
-                `/income?month=${month}&year=${year}`
-            );
+    return {
+        startDate:
+            start.toISOString(),
 
-            const expenseResponse = await API.get(
-                `/expenses?month=${month}&year=${year}`
-            );
-
-            const totalIncome =
-                incomeResponse.data.reduce(
-                    (sum, item) =>
-                        sum + Number(item.amount),
-                    0
-                );
-
-            setIncome(totalIncome);
-            setExpenses(expenseResponse.data);
-
-        } catch (error) {
-            console.error(error);
-        }
+        endDate:
+            end.toISOString()
     };
-
-    const needs = expenses
-        .filter(item => item.type === "needs")
-        .reduce(
-            (sum, item) => sum + Number(item.amount),
-            0
-        );
-
-    const wants = expenses
-        .filter(item => item.type === "wants")
-        .reduce(
-            (sum, item) => sum + Number(item.amount),
-            0
-        );
-
-    const savings = expenses
-        .filter(item => item.type === "savings")
-        .reduce(
-            (sum, item) => sum + Number(item.amount),
-            0
-        );
-
-    const totalExpenses =
-        needs + wants + savings;
-
-    const needsBudget = income * 0.50;
-    const wantsBudget = income * 0.30;
-    const savingsBudget = income * 0.20;
-
-    return (
-        <div className="min-h-screen bg-slate-100 p-6">
-
-            <div className="max-w-7xl mx-auto">
-
-                <div className="flex justify-between items-center">
-
-                    <div>
-                        <h1 className="text-3xl font-bold">
-                            Dashboard
-                        </h1>
-
-                        <p className="text-gray-500">
-                            {today.toLocaleString(
-                                "default",
-                                { month: "long" }
-                            )} {year}
-                        </p>
-                    </div>
-
-                    <button
-                        onClick={() => {
-                            localStorage.clear();
-                            window.location.href =
-                                "/login";
-                        }}
-                        className="bg-black text-white px-4 py-2 rounded-lg"
-                    >
-                        Logout
-                    </button>
-
-                </div>
-
-                {/* Income */}
-
-                <div className="mt-8 grid md:grid-cols-4 gap-5">
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm">
-                        <p className="text-gray-500">
-                            Monthly Income
-                        </p>
-
-                        <h2 className="text-3xl font-bold mt-2">
-                            ₹{income.toLocaleString()}
-                        </h2>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm">
-                        <p className="text-gray-500">
-                            Total Expenses
-                        </p>
-
-                        <h2 className="text-3xl font-bold mt-2">
-                            ₹{totalExpenses.toLocaleString()}
-                        </h2>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm">
-                        <p className="text-gray-500">
-                            Remaining
-                        </p>
-
-                        <h2 className="text-3xl font-bold mt-2">
-                            ₹{(
-                                income -
-                                totalExpenses
-                            ).toLocaleString()}
-                        </h2>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm">
-                        <p className="text-gray-500">
-                            Savings Rate
-                        </p>
-
-                        <h2 className="text-3xl font-bold mt-2">
-                            {income
-                                ? Math.round(
-                                    (savings / income) *
-                                    100
-                                )
-                                : 0}%
-                        </h2>
-                    </div>
-
-                </div>
-
-                {/* 50 / 30 / 20 */}
-
-                <div className="mt-8">
-
-                    <h2 className="text-2xl font-bold mb-5">
-                        50 / 30 / 20 Budget
-                    </h2>
-
-                    <div className="grid md:grid-cols-3 gap-5">
-
-                        <BudgetCard
-                            title="Needs"
-                            percentage="50%"
-                            spent={needs}
-                            budget={needsBudget}
-                        />
-
-                        <BudgetCard
-                            title="Wants"
-                            percentage="30%"
-                            spent={wants}
-                            budget={wantsBudget}
-                        />
-
-                        <BudgetCard
-                            title="Savings"
-                            percentage="20%"
-                            spent={savings}
-                            budget={savingsBudget}
-                        />
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-    );
 }
 
-function BudgetCard({
-    title,
-    percentage,
-    spent,
-    budget
-}) {
-    const progress = budget
-        ? Math.min((spent / budget) * 100, 100)
-        : 0;
+function Dashboard() {
+    const today = new Date();
+
+    const [month, setMonth] =
+        useState(
+            today.getMonth() + 1
+        );
+
+    const [year, setYear] =
+        useState(
+            today.getFullYear()
+        );
+
+    const [data, setData] =
+        useState(null);
+
+    const [loading, setLoading] =
+        useState(true);
+
+    const loadDashboard =
+        async () => {
+            try {
+                setLoading(true);
+
+                const {
+                    startDate,
+                    endDate
+                } =
+                    getDateRange(
+                        month,
+                        year
+                    );
+
+                const response =
+                    await api.get(
+                        "/dashboard",
+                        {
+                            params: {
+                                startDate,
+                                endDate
+                            }
+                        }
+                    );
+
+                setData(
+                    response.data
+                );
+
+            } catch (error) {
+                console.error(
+                    error
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
+
+    useEffect(() => {
+        loadDashboard();
+    }, [month, year]);
+
+    if (loading) {
+        return (
+            <div className="p-10 text-center">
+                Loading dashboard...
+            </div>
+        );
+    }
+
+    if (!data) {
+        return (
+            <div>
+                Unable to load dashboard.
+            </div>
+        );
+    }
+
+    const chartData = [
+        {
+            name: "Needs",
+            value: data.spent.needs
+        },
+        {
+            name: "Wants",
+            value: data.spent.wants
+        },
+        {
+            name: "Savings",
+            value: data.spent.savings
+        }
+    ];
 
     return (
-        <div className="bg-white p-6 rounded-2xl shadow-sm">
+        <div className="space-y-8">
 
-            <div className="flex justify-between">
+            {/* Header */}
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
 
                 <div>
-                    <h3 className="text-xl font-bold">
-                        {title}
-                    </h3>
+                    <h1 className="text-3xl font-bold">
+                        Dashboard
+                    </h1>
 
-                    <p className="text-gray-500">
-                        Target {percentage}
+                    <p className="text-gray-500 mt-1">
+                        Track your monthly budget
                     </p>
                 </div>
 
-                <span className="font-bold">
-                    ₹{spent.toLocaleString()}
-                </span>
+                <MonthSelector
+                    month={month}
+                    year={year}
+                    onChange={(
+                        newMonth,
+                        newYear
+                    ) => {
+                        setMonth(
+                            newMonth
+                        );
 
-            </div>
-
-            <div className="mt-5 h-3 bg-gray-200 rounded-full">
-
-                <div
-                    className="h-3 bg-black rounded-full"
-                    style={{
-                        width: `${progress}%`
+                        setYear(
+                            newYear
+                        );
                     }}
                 />
 
             </div>
 
-            <div className="flex justify-between mt-3 text-sm">
+            {/* Stats */}
 
-                <span>
-                    Spent ₹{spent.toLocaleString()}
-                </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
 
-                <span>
-                    Budget ₹{budget.toLocaleString()}
-                </span>
+                <StatCard
+                    title="Monthly Income"
+                    value={`₹${data.income.toLocaleString("en-IN")}`}
+                />
+
+                <StatCard
+                    title="Total Expenses"
+                    value={`₹${data.totalExpenses.toLocaleString("en-IN")}`}
+                />
+
+                <StatCard
+                    title="Balance"
+                    value={`₹${data.balance.toLocaleString("en-IN")}`}
+                />
+
+                <StatCard
+                    title="Savings"
+                    value={`₹${data.spent.savings.toLocaleString("en-IN")}`}
+                    subtitle={`${data.percentages.savings.toFixed(1)}% of income`}
+                />
+
+            </div>
+
+            {/* Budget */}
+
+            <section>
+
+                <div className="mb-4">
+                    <h2 className="text-xl font-bold">
+                        50 / 30 / 20 Budget
+                    </h2>
+
+                    <p className="text-sm text-gray-500">
+                        Your budget is calculated from
+                        total monthly income.
+                    </p>
+                </div>
+
+                <div className="grid lg:grid-cols-3 gap-4">
+
+                    <BudgetCard
+                        title="Needs"
+                        rule="50%"
+                        budget={
+                            data.budgets.needs
+                        }
+                        spent={
+                            data.spent.needs
+                        }
+                        remaining={
+                            data.remaining.needs
+                        }
+                    />
+
+                    <BudgetCard
+                        title="Wants"
+                        rule="30%"
+                        budget={
+                            data.budgets.wants
+                        }
+                        spent={
+                            data.spent.wants
+                        }
+                        remaining={
+                            data.remaining.wants
+                        }
+                    />
+
+                    <BudgetCard
+                        title="Savings"
+                        rule="20%"
+                        budget={
+                            data.budgets.savings
+                        }
+                        spent={
+                            data.spent.savings
+                        }
+                        remaining={
+                            data.remaining.savings
+                        }
+                    />
+
+                </div>
+
+            </section>
+
+            {/* Charts */}
+
+            <div className="grid lg:grid-cols-2 gap-5">
+
+                <div className="bg-white border rounded-2xl p-5">
+
+                    <h2 className="font-bold">
+                        Spending Distribution
+                    </h2>
+
+                    <div className="h-80">
+
+                        <ResponsiveContainer
+                            width="100%"
+                            height="100%"
+                        >
+                            <PieChart>
+
+                                <Pie
+                                    data={chartData}
+                                    dataKey="value"
+                                    nameKey="name"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={110}
+                                    label
+                                />
+
+                                <Tooltip />
+
+                                <Legend />
+
+                            </PieChart>
+
+                        </ResponsiveContainer>
+
+                    </div>
+
+                </div>
+
+                <div className="bg-white border rounded-2xl p-5">
+
+                    <h2 className="font-bold">
+                        Top Categories
+                    </h2>
+
+                    <div className="mt-5 space-y-4">
+
+                        {data.categories
+                            .slice(0, 6)
+                            .map(item => (
+                                <div
+                                    key={item.category}
+                                    className="flex justify-between"
+                                >
+                                    <span>
+                                        {item.category}
+                                    </span>
+
+                                    <span className="font-semibold">
+                                        ₹
+                                        {item.amount.toLocaleString(
+                                            "en-IN"
+                                        )}
+                                    </span>
+                                </div>
+                            ))}
+
+                        {data.categories.length === 0 && (
+                            <p className="text-gray-500">
+                                No expenses this month.
+                            </p>
+                        )}
+
+                    </div>
+
+                </div>
 
             </div>
 

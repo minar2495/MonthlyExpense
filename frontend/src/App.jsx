@@ -5,96 +5,112 @@ import {
     Navigate
 } from "react-router-dom";
 
+import {
+    AuthProvider
+} from "./context/AuthContext";
+
+import ProtectedRoute
+    from "./components/ProtectedRoute";
+
+import Layout
+    from "./components/Layout";
+
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import Expenses from "./pages/Expenses";
-import Income from "./pages/Income";
-import Reports from "./pages/Reports";
 
-function ProtectedRoute({ children }) {
-    const token = localStorage.getItem("token");
+function Dashboard() {
+    return <div>Dashboard</div>;
+}
 
-    if (!token) {
-        return <Navigate to="/login" replace />;
-    }
+function Income() {
+    return <div>Income</div>;
+}
 
-    return children;
+function Expenses() {
+    return <div>Expenses</div>;
+}
+
+function Reports() {
+    return <div>Reports</div>;
 }
 
 function App() {
     return (
-        <BrowserRouter>
-            <Routes>
+        <AuthProvider>
 
-                <Route
-                    path="/login"
-                    element={<Login />}
-                />
+            <BrowserRouter>
 
-                <Route
-                    path="/register"
-                    element={<Register />}
-                />
+                <Routes>
 
-                <Route
-                    path="/dashboard"
-                    element={
-                        <ProtectedRoute>
-                            <Dashboard />
-                        </ProtectedRoute>
-                    }
-                />
+                    {/* Public */}
 
-                <Route
-                    path="/expenses"
-                    element={
-                        <ProtectedRoute>
-                            <Expenses />
-                        </ProtectedRoute>
-                    }
-                />
+                    <Route
+                        path="/login"
+                        element={<Login />}
+                    />
 
-                <Route
-                    path="/income"
-                    element={
-                        <ProtectedRoute>
-                            <Income />
-                        </ProtectedRoute>
-                    }
-                />
+                    <Route
+                        path="/register"
+                        element={<Register />}
+                    />
 
-                <Route
-                    path="/reports"
-                    element={
-                        <ProtectedRoute>
-                            <Reports />
-                        </ProtectedRoute>
-                    }
-                />
+                    {/* Protected */}
 
-                <Route
-                    path="/"
-                    element={
-                        <Navigate
-                            to="/dashboard"
-                            replace
+                    <Route
+                        element={
+                            <ProtectedRoute>
+                                <Layout />
+                            </ProtectedRoute>
+                        }
+                    >
+
+                        <Route
+                            path="/dashboard"
+                            element={<Dashboard />}
                         />
-                    }
-                />
 
-                <Route
-                    path="*"
-                    element={
-                        <Navigate
-                            to="/dashboard"
-                            replace
+                        <Route
+                            path="/income"
+                            element={<Income />}
                         />
-                    }
-                />
 
-            </Routes>
-        </BrowserRouter>
+                        <Route
+                            path="/expenses"
+                            element={<Expenses />}
+                        />
+
+                        <Route
+                            path="/reports"
+                            element={<Reports />}
+                        />
+
+                    </Route>
+
+                    <Route
+                        path="/"
+                        element={
+                            <Navigate
+                                to="/dashboard"
+                                replace
+                            />
+                        }
+                    />
+
+                    <Route
+                        path="*"
+                        element={
+                            <Navigate
+                                to="/dashboard"
+                                replace
+                            />
+                        }
+                    />
+
+                </Routes>
+
+            </BrowserRouter>
+
+        </AuthProvider>
     );
 }
 

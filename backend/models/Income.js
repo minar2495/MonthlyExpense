@@ -5,7 +5,8 @@ const incomeSchema = new mongoose.Schema(
         userId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
-            required: true
+            required: true,
+            index: true
         },
 
         amount: {
@@ -22,16 +23,6 @@ const incomeSchema = new mongoose.Schema(
 
         date: {
             type: Date,
-            default: Date.now
-        },
-
-        month: {
-            type: Number,
-            required: true
-        },
-
-        year: {
-            type: Number,
             required: true
         }
     },
@@ -40,4 +31,12 @@ const incomeSchema = new mongoose.Schema(
     }
 );
 
-module.exports = mongoose.model("Income", incomeSchema);
+incomeSchema.index({
+    userId: 1,
+    date: 1
+});
+
+module.exports = mongoose.model(
+    "Income",
+    incomeSchema
+);

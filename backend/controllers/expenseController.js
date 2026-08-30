@@ -1,6 +1,53 @@
 const Expense = require("../models/Expense");
 
-exports.addExpense = async (req, res) => {
+const validTypes = [
+    "needs",
+    "wants",
+    "savings"
+];
+
+exports.getExpenses = async (req, res) => {
+    try {
+        const {
+            startDate,
+            endDate,
+            type,
+            category
+        } = req.query;
+
+        const filter = {
+            userId: req.user.id
+        };
+
+        if (startDate && endDate) {
+            filter.date = {
+                $gte: new Date(startDate),
+                $lt: new Date(endDate)
+            };
+        }
+
+        if (type) {
+            filter.type = type;
+        }
+
+        if (category) {
+            filter.category = category;
+        }
+
+        const expenses =
+            await Expense.find(filter)
+                .sort({ date: -1 });
+
+        res.json(expenses);
+
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
+
+exports.createExpense = async (req, res) => {
     try {
         const {
             amount,
@@ -10,22 +57,37 @@ exports.addExpense = async (req, res) => {
             date
         } = req.body;
 
-        const expenseDate = date
-            ? new Date(date)
-            : new Date();
+        if (
+            !amount ||
+            !description ||
+            !category ||
+            !type ||
+            !date
+        ) {
+            return res.status(400).json({
+                message:
+                    "All expense fields are required"
+            });
+        }
 
-        const expense = await Expense.create({
-            userId: req.user.id,
-            amount,
-            description,
-            category,
-            type,
-            date: expenseDate,
-            month: expenseDate.getMonth() + 1,
-            year: expenseDate.getFullYear()
-        });
+        if (!validTypes.includes(type)) {
+            return res.status(400).json({
+                message: "Invalid expense type"
+            });
+        }
+
+        const expense =
+            await Expense.create({
+                userId: req.user.id,
+                amount: Number(amount),
+                description,
+                category,
+                type,
+                date: new Date(date)
+            });
 
         res.status(201).json(expense);
+
     } catch (error) {
         res.status(500).json({
             message: error.message
@@ -33,17 +95,53 @@ exports.addExpense = async (req, res) => {
     }
 };
 
-exports.getExpenses = async (req, res) => {
+exports.updateExpense = async (req, res) => {
     try {
-        const { month, year } = req.query;
+        if (
+            !validTypes.includes(
+                req.body.type
+            )
+        ) {
+            return res.status(400).json({
+                message:
+                    "Invalid expense type"
+            });
+        }
 
-        const expenses = await Expense.find({
-            userId: req.user.id,
-            month,
-            year
-        }).sort({ date: -1 });
+        const expense =
+            await Expense.findOneAndUpdate(
+                {
+                    _id: req.params.id,
+                    userId: req.user.id
+                },
+                {
+                    amount: Number(
+                        req.body.amount
+                    ),
+                    description:
+                        req.body.description,
+                    category:
+                        req.body.category,
+                    type: req.body.type,
+                    date: new Date(
+                        req.body.date
+                    )
+                },
+                {
+                    new: true,
+                    runValidators: true
+                }
+            );
 
-        res.json(expenses);
+        if (!expense) {
+            return res.status(404).json({
+                message:
+                    "Expense not found"
+            });
+        }
+
+        res.json(expense);
+
     } catch (error) {
         res.status(500).json({
             message: error.message
@@ -53,14 +151,23 @@ exports.getExpenses = async (req, res) => {
 
 exports.deleteExpense = async (req, res) => {
     try {
-        await Expense.findOneAndDelete({
-            _id: req.params.id,
-            userId: req.user.id
-        });
+        const expense =
+            await Expense.findOneAndDelete({
+                _id: req.params.id,
+                userId: req.user.id
+            });
+
+        if (!expense) {
+            return res.status(404).json({
+                message:
+                    "Expense not found"
+            });
+        }
 
         res.json({
             message: "Expense deleted"
         });
+
     } catch (error) {
         res.status(500).json({
             message: error.message

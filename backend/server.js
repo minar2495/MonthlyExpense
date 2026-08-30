@@ -20,7 +20,7 @@ app.use(express.json());
 
 app.get("/", (req, res) => {
     res.json({
-        message: "SmartBudget API is running"
+        message: "SmartBudget API running"
     });
 });
 
@@ -39,8 +39,16 @@ app.use(
     require("./routes/expenseRoutes")
 );
 
-const PORT = process.env.PORT || 5000;
+app.use(
+    "/api/dashboard",
+    require("./routes/dashboardRoutes")
+);
+
+const PORT =
+    process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(
+        `Server running on http://localhost:${PORT}`
+    );
 });
