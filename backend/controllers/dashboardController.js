@@ -1,30 +1,50 @@
-const Expense = require("../models/Expense");
 const Income = require("../models/Income");
+const Expense = require("../models/Expense");
 
 exports.getDashboard = async (req, res) => {
     try {
-        const {
-            startDate,
-            endDate
-        } = req.query;
+        const year = Number(req.query.year);
+        const month = Number(req.query.month);
 
-        const userId = req.user.id;
+        if (
+            !year ||
+            !month ||
+            month < 1 ||
+            month > 12
+        ) {
+            return res.status(400).json({
+                message: "Valid year and month are required"
+            });
+        }
 
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        const startDate = new Date(
+            year,
+            month - 1,
+            1
+        );
 
-        const dateFilter = {
-            userId,
-            date: {
-                $gte: start,
-                $lt: end
-            }
-        };
+        const endDate = new Date(
+            year,
+            month,
+            1
+        );
 
-        const incomeResult =
+        /*
+         * ============================
+         * INCOME AGGREGATION
+         * ============================
+         */
+
+        const incomeAggregation =
             await Income.aggregate([
                 {
-                    $match: dateFilter
+                    $match: {
+                        userId: req.user.id,
+                        date: {
+                            $gte: startDate,
+                            $lt: endDate
+                        }
+                    }
                 },
                 {
                     $group: {
@@ -36,25 +56,26 @@ exports.getDashboard = async (req, res) => {
                 }
             ]);
 
-        const expenseResult =
+        const totalIncome =
+            incomeAggregation[0]?.total || 0;
+
+
+        /*
+         * ============================
+         * EXPENSE AGGREGATION
+         * ============================
+         */
+
+        const expenseAggregation =
             await Expense.aggregate([
                 {
-                    $match: dateFilter
-                },
-                {
-                    $group: {
-                        _id: "$type",
-                        total: {
-                            $sum: "$amount"
+                    $match: {
+                        userId: req.user.id,
+                        date: {
+                            $gte: startDate,
+                            $lt: endDate
                         }
                     }
-                }
-            ]);
-
-        const categoryResult =
-            await Expense.aggregate([
-                {
-                    $match: dateFilter
                 },
                 {
                     $group: {
@@ -63,121 +84,191 @@ exports.getDashboard = async (req, res) => {
                             $sum: "$amount"
                         }
                     }
-                },
-                {
-                    $sort: {
-                        total: -1
-                    }
                 }
             ]);
 
-        const dailyResult =
-            await Expense.aggregate([
-                {
-                    $match: dateFilter
-                },
-                {
-                    $group: {
-                        _id: {
-                            $dateToString: {
-                                format: "%Y-%m-%d",
-                                date: "$date"
-                            }
-                        },
-                        total: {
-                            $sum: "$amount"
-                        }
-                    }
-                },
-                {
-                    $sort: {
-                        _id: 1
-                    }
-                }
-            ]);
 
-        const income =
-            incomeResult[0]?.total || 0;
-
-        const byType = {
-            needs: 0,
-            wants: 0,
-            savings: 0
+        const categoryTotals = {
+            Needs: 0,
+            Wants: 0,
+            Savings: 0
         };
 
-        expenseResult.forEach(item => {
-            byType[item._id] = item.total;
-        });
+
+        expenseAggregation.forEach(
+            (item) => {
+
+                if (
+                    Object.prototype.hasOwnProperty.call(
+                        categoryTotals,
+                        item._id
+                    )
+                ) {
+                    categoryTotals[item._id] =
+                        item.total;
+                }
+
+            }
+        );
+
 
         const totalExpenses =
-            byType.needs +
-            byType.wants +
-            byType.savings;
+            categoryTotals.Needs +
+            categoryTotals.Wants +
+            categoryTotals.Savings;
 
-        const budgets = {
-            needs: income * 0.50,
-            wants: income * 0.30,
-            savings: income * 0.20
+
+        /*
+         * ============================
+         * 50 / 30 / 20
+         * ============================
+         */
+
+        const budget = {
+            Needs: totalIncome * 0.50,
+            Wants: totalIncome * 0.30,
+            Savings: totalIncome * 0.20
         };
 
+
+        /*
+         * ============================
+         * REMAINING BALANCE
+         * ============================
+         */
+
+        const remaining =
+            totalIncome -
+            totalExpenses;
+
+
+        /*
+         * ============================
+         * BUDGET USAGE
+         * ============================
+         */
+
+        const usage = {
+            Needs: budget.Needs > 0
+                ? (categoryTotals.Needs / budget.Needs) * 100
+                : 0,
+
+            Wants: budget.Wants > 0
+                ? (categoryTotals.Wants / budget.Wants) * 100
+                : 0,
+
+            Savings: budget.Savings > 0
+                ? (categoryTotals.Savings / budget.Savings) * 100
+                : 0
+        };
+
+
+        /*
+         * ============================
+         * RECENT INCOME
+         * ============================
+         */
+
+        const recentIncome =
+            await Income.find({
+                userId: req.user.id,
+                date: {
+                    $gte: startDate,
+                    $lt: endDate
+                }
+            })
+                .sort({ date: -1 })
+                .limit(5)
+                .lean();
+
+
+        /*
+         * ============================
+         * RECENT EXPENSES
+         * ============================
+         */
+
+        const recentExpenses =
+            await Expense.find({
+                userId: req.user.id,
+                date: {
+                    $gte: startDate,
+                    $lt: endDate
+                }
+            })
+                .sort({ date: -1 })
+                .limit(5)
+                .lean();
+
+
+        /*
+         * ============================
+         * TRANSACTION COUNT
+         * ============================
+         */
+
+        const incomeCount =
+            await Income.countDocuments({
+                userId: req.user.id,
+                date: {
+                    $gte: startDate,
+                    $lt: endDate
+                }
+            });
+
+
+        const expenseCount =
+            await Expense.countDocuments({
+                userId: req.user.id,
+                date: {
+                    $gte: startDate,
+                    $lt: endDate
+                }
+            });
+
+
         res.json({
-            income,
-            totalExpenses,
 
-            balance:
-                income - totalExpenses,
-
-            budgets,
-
-            spent: byType,
-
-            remaining: {
-                needs:
-                    budgets.needs -
-                    byType.needs,
-
-                wants:
-                    budgets.wants -
-                    byType.wants,
-
-                savings:
-                    budgets.savings -
-                    byType.savings
+            period: {
+                year,
+                month
             },
 
-            percentages: {
-                needs: income
-                    ? (byType.needs / income) *
-                      100
-                    : 0,
-
-                wants: income
-                    ? (byType.wants / income) *
-                      100
-                    : 0,
-
-                savings: income
-                    ? (byType.savings / income) *
-                      100
-                    : 0
+            income: {
+                total: totalIncome,
+                count: incomeCount
             },
 
-            categories:
-                categoryResult.map(item => ({
-                    category: item._id,
-                    amount: item.total
-                })),
+            expenses: {
+                total: totalExpenses,
+                count: expenseCount,
 
-            daily:
-                dailyResult.map(item => ({
-                    date: item._id,
-                    amount: item.total
-                }))
+                categories: categoryTotals
+            },
+
+            budget,
+
+            usage,
+
+            remaining,
+
+            transactions: {
+                income: recentIncome,
+                expenses: recentExpenses
+            }
+
         });
 
     } catch (error) {
+
+        console.error(
+            "Dashboard error:",
+            error
+        );
+
         res.status(500).json({
             message: error.message
         });
+
     }
 };

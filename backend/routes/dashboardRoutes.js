@@ -7,6 +7,12 @@ const {
     getDashboard
 } = require("../controllers/dashboardController");
 
-router.get("/", protect, getDashboard);
+
+router.get(
+    "/",
+    protect,
+    getDashboard
+);
+
 
 module.exports = router;
