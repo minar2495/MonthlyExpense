@@ -19,6 +19,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Income from "./pages/Income";
 import Expenses from "./pages/Expenses";
+import JointExpenses from "./pages/JointExpenses";
 import Reports from "./pages/Reports";
 import Dashboard from "./pages/Dashboard";
 
@@ -65,6 +66,11 @@ function App() {
                         <Route
                             path="/expenses"
                             element={<Expenses />}
+                        />
+
+                        <Route
+                            path="/joint-expenses"
+                            element={<JointExpenses />}
                         />
 
                         <Route

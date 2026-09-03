@@ -40,6 +40,11 @@ app.use(
 );
 
 app.use(
+    "/api/sharing",
+    require("./routes/sharingRoutes")
+);
+
+app.use(
     "/api/dashboard",
     require("./routes/dashboardRoutes")
 );

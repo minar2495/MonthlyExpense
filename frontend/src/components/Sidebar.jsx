@@ -2,6 +2,7 @@ import {
     LayoutDashboard,
     Wallet,
     Receipt,
+    Users,
     BarChart3,
     LogOut,
     X
@@ -34,6 +35,11 @@ function Sidebar({
             to: "/expenses",
             label: "Expenses",
             icon: Receipt
+        },
+        {
+            to: "/joint-expenses",
+            label: "Joint Expenses",
+            icon: Users
         },
         {
             to: "/reports",
