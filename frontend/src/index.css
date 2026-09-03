@@ -1,9 +1,21 @@
 @import "tailwindcss";
+
 * {
     box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+    min-height: 100%;
+}
+
 body {
     margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family:
+        Inter,
+        ui-sans-serif,
+        system-ui,
+        sans-serif;
+    background: #f9fafb;
 }

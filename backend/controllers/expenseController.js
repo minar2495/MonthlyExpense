@@ -1,69 +1,222 @@
 const Expense = require("../models/Expense");
 
-exports.addExpense = async (req, res) => {
-    try {
-        const {
-            amount,
-            description,
-            category,
-            type,
-            date
-        } = req.body;
-
-        const expenseDate = date
-            ? new Date(date)
-            : new Date();
-
-        const expense = await Expense.create({
-            userId: req.user.id,
-            amount,
-            description,
-            category,
-            type,
-            date: expenseDate,
-            month: expenseDate.getMonth() + 1,
-            year: expenseDate.getFullYear()
-        });
-
-        res.status(201).json(expense);
-    } catch (error) {
-        res.status(500).json({
-            message: error.message
-        });
-    }
-};
 
 exports.getExpenses = async (req, res) => {
     try {
-        const { month, year } = req.query;
 
-        const expenses = await Expense.find({
-            userId: req.user.id,
-            month,
-            year
-        }).sort({ date: -1 });
+        const {
+            startDate,
+            endDate,
+            category
+        } = req.query;
+
+        const filter = {
+            userId: req.user.id
+        };
+
+        if (startDate && endDate) {
+
+            filter.date = {
+                $gte: new Date(startDate),
+                $lt: new Date(endDate)
+            };
+
+        }
+
+        if (category) {
+            filter.category = category;
+        }
+
+        const expenses =
+            await Expense.find(filter)
+                .sort({ date: -1 });
 
         res.json(expenses);
+
     } catch (error) {
+
         res.status(500).json({
             message: error.message
         });
+
     }
 };
 
-exports.deleteExpense = async (req, res) => {
-    try {
-        await Expense.findOneAndDelete({
-            _id: req.params.id,
-            userId: req.user.id
-        });
 
-        res.json({
-            message: "Expense deleted"
-        });
+exports.createExpense = async (req, res) => {
+
+    try {
+
+        const {
+            title,
+            amount,
+            category,
+            date
+        } = req.body;
+
+
+        if (
+            !title ||
+            amount === undefined ||
+            !category ||
+            !date
+        ) {
+
+            return res.status(400).json({
+                message:
+                    "Title, amount, category and date are required"
+            });
+
+        }
+
+
+        if (Number(amount) <= 0) {
+
+            return res.status(400).json({
+                message:
+                    "Amount must be greater than zero"
+            });
+
+        }
+
+
+        const expense =
+            await Expense.create({
+
+                userId: req.user.id,
+
+                title: title.trim(),
+
+                amount: Number(amount),
+
+                category,
+
+                date: new Date(date)
+
+            });
+
+
+        res.status(201).json(expense);
+
     } catch (error) {
+
         res.status(500).json({
             message: error.message
         });
+
+    }
+};
+
+
+exports.updateExpense = async (req, res) => {
+
+    try {
+
+        const {
+            title,
+            amount,
+            category,
+            date
+        } = req.body;
+
+
+        if (
+            !title ||
+            amount === undefined ||
+            !category ||
+            !date
+        ) {
+
+            return res.status(400).json({
+                message:
+                    "Title, amount, category and date are required"
+            });
+
+        }
+
+
+        if (Number(amount) <= 0) {
+
+            return res.status(400).json({
+                message:
+                    "Amount must be greater than zero"
+            });
+
+        }
+
+
+        const expense =
+            await Expense.findOneAndUpdate(
+                {
+                    _id: req.params.id,
+                    userId: req.user.id
+                },
+                {
+                    title: title.trim(),
+                    amount: Number(amount),
+                    category,
+                    date: new Date(date)
+                },
+                {
+                    new: true,
+                    runValidators: true
+                }
+            );
+
+
+        if (!expense) {
+
+            return res.status(404).json({
+                message:
+                    "Expense not found"
+            });
+
+        }
+
+
+        res.json(expense);
+
+    } catch (error) {
+
+        res.status(500).json({
+            message: error.message
+        });
+
+    }
+};
+
+
+exports.deleteExpense = async (req, res) => {
+
+    try {
+
+        const expense =
+            await Expense.findOneAndDelete({
+                _id: req.params.id,
+                userId: req.user.id
+            });
+
+
+        if (!expense) {
+
+            return res.status(404).json({
+                message:
+                    "Expense not found"
+            });
+
+        }
+
+
+        res.json({
+            message:
+                "Expense deleted successfully"
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            message: error.message
+        });
+
     }
 };
