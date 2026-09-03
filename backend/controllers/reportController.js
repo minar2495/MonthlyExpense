@@ -38,7 +38,7 @@ exports.getMonthlyReport = async (req, res) => {
             await Income.aggregate([
                 {
                     $match: {
-                        userId: req.user._id,
+                        userId: req.user.id,
                         date: {
                             $gte: startDate,
                             $lt: endDate
@@ -67,7 +67,7 @@ exports.getMonthlyReport = async (req, res) => {
             await Expense.aggregate([
                 {
                     $match: {
-                        userId: req.user._id,
+                        userId: req.user.id,
                         date: {
                             $gte: startDate,
                             $lt: endDate
@@ -164,7 +164,7 @@ exports.getMonthlyReport = async (req, res) => {
 
         const recentIncome =
             await Income.find({
-                userId: req.user._id,
+                userId: req.user.id,
                 date: {
                     $gte: startDate,
                     $lt: endDate
@@ -181,7 +181,7 @@ exports.getMonthlyReport = async (req, res) => {
 
         const recentExpenses =
             await Expense.find({
-                userId: req.user._id,
+                userId: req.user.id,
                 date: {
                     $gte: startDate,
                     $lt: endDate

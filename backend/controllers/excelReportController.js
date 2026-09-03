@@ -361,7 +361,7 @@ exports.downloadMonthlyExcel = async (req, res) => {
 exports.downloadAllExpensesExcel = async (req, res) => {
     try {
         const expenses = await Expense.find({
-            userId: req.user._id
+            userId: req.user.id
         })
             .sort({ date: 1 })
             .lean();
