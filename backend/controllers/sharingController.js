@@ -151,6 +151,31 @@ exports.updateRequest = async (req, res) => {
     }
 };
 
+exports.stopSharing = async (req, res) => {
+    try {
+        const request = await ShareRequest.findOneAndDelete({
+            _id: req.params.id,
+            status: "approved",
+            $or: [
+                { requesterId: req.user.id },
+                { recipientId: req.user.id }
+            ]
+        });
+
+        if (!request) {
+            return res.status(404).json({
+                message: "Approved sharing relationship not found"
+            });
+        }
+
+        res.json({
+            message: "Sharing stopped successfully"
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 exports.getSharedExpenses = async (req, res) => {
     try {
         const partnerIds = await approvedPartnerIds(req.user.id);

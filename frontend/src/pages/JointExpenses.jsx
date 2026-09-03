@@ -6,6 +6,7 @@ import {
     Loader2,
     Receipt,
     Send,
+    Unlink,
     Users,
     X
 } from "lucide-react";
@@ -55,6 +56,10 @@ function JointExpenses() {
 
     const [sharingSaving, setSharingSaving] =
         useState(false);
+
+    const approvedRequest = requests.find(
+        (request) => request.status === "approved"
+    );
 
     useEffect(() => {
         const loadSharing = async () => {
@@ -165,6 +170,38 @@ function JointExpenses() {
         }
     };
 
+    const stopSharing = async () => {
+        if (!approvedRequest) return;
+
+        const confirmed = window.confirm(
+            "Stop sharing expense details with this partner?"
+        );
+
+        if (!confirmed) return;
+
+        try {
+            setSharingSaving(true);
+            setError("");
+
+            await api.delete(
+                `/sharing/requests/${approvedRequest.id}`
+            );
+
+            setRequests((current) => current.filter(
+                (request) => request.id !== approvedRequest.id
+            ));
+            setApproved(false);
+            setExpenses([]);
+        } catch (requestError) {
+            setError(
+                requestError.response?.data?.message ||
+                "Unable to stop sharing."
+            );
+        } finally {
+            setSharingSaving(false);
+        }
+    };
+
     const filteredExpenses = expenses.filter((expense) => {
         const expenseDate = new Date(expense.date);
 
@@ -238,6 +275,29 @@ function JointExpenses() {
                     }}
                 />
             </div>
+
+            {approved && approvedRequest && (
+                <div className="bg-white border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <p className="font-semibold">
+                            Sharing with {String(approvedRequest.requester?.id) === String(user?.id)
+                                ? approvedRequest.recipient.name
+                                : approvedRequest.requester.name}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-1">
+                            Both accounts can view the shared expense details.
+                        </p>
+                    </div>
+                    <button
+                        onClick={stopSharing}
+                        disabled={sharingSaving}
+                        className="border border-red-200 text-red-600 px-4 py-2.5 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-red-50 disabled:opacity-50"
+                    >
+                        <Unlink size={18} />
+                        Stop sharing
+                    </button>
+                </div>
+            )}
 
             {!approved && (
                 <div className="bg-white border rounded-2xl p-6 space-y-6">
