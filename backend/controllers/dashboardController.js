@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Income = require("../models/Income");
 const Expense = require("../models/Expense");
 
@@ -29,6 +30,10 @@ exports.getDashboard = async (req, res) => {
             1
         );
 
+        const userId = new mongoose.Types.ObjectId(
+            req.user.id
+        );
+
         /*
          * ============================
          * INCOME AGGREGATION
@@ -39,7 +44,7 @@ exports.getDashboard = async (req, res) => {
             await Income.aggregate([
                 {
                     $match: {
-                        userId: req.user.id,
+                        userId,
                         date: {
                             $gte: startDate,
                             $lt: endDate
@@ -70,7 +75,7 @@ exports.getDashboard = async (req, res) => {
             await Expense.aggregate([
                 {
                     $match: {
-                        userId: req.user.id,
+                        userId,
                         date: {
                             $gte: startDate,
                             $lt: endDate
