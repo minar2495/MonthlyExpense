@@ -357,3 +357,74 @@ exports.downloadMonthlyExcel = async (req, res) => {
         });
     }
 };
+
+exports.downloadAllExpensesExcel = async (req, res) => {
+    try {
+        const expenses = await Expense.find({
+            userId: req.user._id
+        })
+            .sort({ date: 1 })
+            .lean();
+
+        const workbook = new ExcelJS.Workbook();
+        const expenseSheet = workbook.addWorksheet("Expenses");
+
+        expenseSheet.columns = [
+            {
+                header: "Date",
+                key: "date",
+                width: 15
+            },
+            {
+                header: "Title",
+                key: "title",
+                width: 30
+            },
+            {
+                header: "Category",
+                key: "category",
+                width: 20
+            },
+            {
+                header: "Amount",
+                key: "amount",
+                width: 20
+            }
+        ];
+
+        expenses.forEach((expense) => {
+            expenseSheet.addRow({
+                date: expense.date,
+                title: expense.title,
+                category: expense.category,
+                amount: Number(expense.amount || 0)
+            });
+        });
+
+        expenseSheet.getRow(1).font = {
+            bold: true
+        };
+
+        expenseSheet.getColumn(1).numFmt = "dd-mm-yyyy";
+        expenseSheet.getColumn(4).numFmt = '₹#,##0.00';
+
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        res.setHeader(
+            "Content-Disposition",
+            'attachment; filename="SmartBudget-All-Expenses.xlsx"'
+        );
+
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (error) {
+        console.error("All expenses Excel error:", error);
+
+        res.status(500).json({
+            message: "Failed to generate expenses Excel file"
+        });
+    }
+};

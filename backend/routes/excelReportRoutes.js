@@ -4,8 +4,15 @@ const protect =
     require("../middleware/authMiddleware");
 
 const {
-    downloadMonthlyExcel
+    downloadMonthlyExcel,
+    downloadAllExpensesExcel
 } = require("../controllers/excelReportController");
+
+router.get(
+    "/all",
+    protect,
+    downloadAllExpensesExcel
+);
 
 router.get(
     "/monthly",

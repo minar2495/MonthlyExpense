@@ -6,10 +6,14 @@ import {
     Trash2,
     Receipt,
     X,
-    Loader2
+    Loader2,
+    Download,
+    ChevronLeft,
+    ChevronRight
 } from "lucide-react";
 
 import api from "../services/api";
+import MonthSelector from "../components/MonthSelector";
 
 
 const categories = [
@@ -32,6 +36,22 @@ const categories = [
 
 
 function Expenses() {
+
+    const now = new Date();
+
+    const [year, setYear] =
+        useState(now.getFullYear());
+
+    const [month, setMonth] =
+        useState(now.getMonth() + 1);
+
+    const [currentPage, setCurrentPage] =
+        useState(1);
+
+    const [downloading, setDownloading] =
+        useState(false);
+
+    const itemsPerPage = 10;
 
     const today =
         new Date()
@@ -271,8 +291,75 @@ function Expenses() {
     };
 
 
+    const downloadAllExpensesExcel = async () => {
+
+        try {
+
+            setDownloading(true);
+
+            const response = await api.get(
+                "/reports/excel/all",
+                {
+                    responseType: "blob"
+                }
+            );
+
+            const url = window.URL.createObjectURL(
+                new Blob(
+                    [response.data],
+                    {
+                        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    }
+                )
+            );
+
+            const link = document.createElement("a");
+
+            link.href = url;
+            link.download = "SmartBudget-All-Expenses.xlsx";
+
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+
+        } catch (error) {
+
+            console.error("Download failed:", error);
+            setError("Unable to download all expenses.");
+
+        } finally {
+
+            setDownloading(false);
+
+        }
+    };
+
+
+    const filteredExpenses = expenses.filter((expense) => {
+        const expenseDate = new Date(expense.date);
+
+        return (
+            expenseDate.getFullYear() === year &&
+            expenseDate.getMonth() + 1 === month
+        );
+    });
+
+    const totalPages = Math.max(
+        1,
+        Math.ceil(filteredExpenses.length / itemsPerPage)
+    );
+
+    const page = Math.min(currentPage, totalPages);
+
+    const visibleExpenses = filteredExpenses.slice(
+        (page - 1) * itemsPerPage,
+        page * itemsPerPage
+    );
+
+
     const totalExpenses =
-        expenses.reduce(
+        filteredExpenses.reduce(
             (total, item) =>
                 total + Number(item.amount),
             0
@@ -282,7 +369,7 @@ function Expenses() {
     const getCategoryTotal =
         (category) => {
 
-            return expenses
+            return filteredExpenses
                 .filter(
                     item =>
                         item.category === category
@@ -302,7 +389,7 @@ function Expenses() {
 
             {/* Header */}
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
 
                 <div>
 
@@ -311,22 +398,52 @@ function Expenses() {
                     </h1>
 
                     <p className="text-gray-500 mt-1">
-                        Track and manage your monthly expenses.
+                        Track and manage your expenses.
                     </p>
 
                 </div>
 
 
-                <button
-                    onClick={openAddModal}
-                    className="bg-black text-white px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-gray-800"
-                >
+                <div className="flex flex-col sm:flex-row gap-3">
 
-                    <Plus size={19} />
+                    <MonthSelector
+                        month={month}
+                        year={year}
+                        onChange={(nextMonth, nextYear) => {
+                            setMonth(nextMonth);
+                            setYear(nextYear);
+                            setCurrentPage(1);
+                        }}
+                    />
 
-                    Add Expense
+                    <button
+                        onClick={downloadAllExpensesExcel}
+                        disabled={downloading}
+                        className="px-4 py-2.5 border bg-white rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-gray-50 disabled:opacity-50"
+                    >
 
-                </button>
+                        {downloading ? (
+                            <Loader2 size={18} className="animate-spin" />
+                        ) : (
+                            <Download size={18} />
+                        )}
+
+                        {downloading ? "Downloading..." : "Download All Excel"}
+
+                    </button>
+
+                    <button
+                        onClick={openAddModal}
+                        className="bg-black text-white px-5 py-3 rounded-xl font-semibold flex items-center justify-center gap-2 hover:bg-gray-800"
+                    >
+
+                        <Plus size={19} />
+
+                        Add Expense
+
+                    </button>
+
+                </div>
 
             </div>
 
@@ -444,7 +561,7 @@ function Expenses() {
 
                     </div>
 
-                ) : expenses.length === 0 ? (
+                ) : filteredExpenses.length === 0 ? (
 
                     <div className="p-12 text-center">
 
@@ -458,7 +575,7 @@ function Expenses() {
                         </div>
 
                         <h3 className="font-semibold mt-4">
-                            No expenses recorded
+                            No expenses for this month
                         </h3>
 
                         <p className="text-sm text-gray-500 mt-1">
@@ -511,7 +628,7 @@ function Expenses() {
 
                             <tbody>
 
-                                {expenses.map(
+                                {visibleExpenses.map(
                                     (expense) => (
 
                                         <tr
@@ -614,6 +731,38 @@ function Expenses() {
                             </tbody>
 
                         </table>
+
+                        {filteredExpenses.length > itemsPerPage && (
+                            <div className="flex items-center justify-between px-5 py-4 border-t">
+
+                                <p className="text-sm text-gray-500">
+                                    Page {page} of {totalPages}
+                                </p>
+
+                                <div className="flex gap-2">
+
+                                    <button
+                                        onClick={() => setCurrentPage(page - 1)}
+                                        disabled={page === 1}
+                                        className="p-2 border rounded-lg hover:bg-gray-50 disabled:opacity-40"
+                                        aria-label="Previous page"
+                                    >
+                                        <ChevronLeft size={18} />
+                                    </button>
+
+                                    <button
+                                        onClick={() => setCurrentPage(page + 1)}
+                                        disabled={page === totalPages}
+                                        className="p-2 border rounded-lg hover:bg-gray-50 disabled:opacity-40"
+                                        aria-label="Next page"
+                                    >
+                                        <ChevronRight size={18} />
+                                    </button>
+
+                                </div>
+
+                            </div>
+                        )}
 
                     </div>
 
