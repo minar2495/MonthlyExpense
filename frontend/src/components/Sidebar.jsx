@@ -62,7 +62,7 @@ function Sidebar({
             <aside
                 className={`
                     fixed z-40 inset-y-0 left-0
-                    w-64 bg-white border-r
+                    w-64 bg-white/90 backdrop-blur border-r
                     transform transition-transform
                     md:translate-x-0
                     ${open
@@ -74,12 +74,12 @@ function Sidebar({
                 <div className="h-16 px-6 flex items-center justify-between border-b">
 
                     <div>
-                        <h1 className="text-xl font-bold">
+                        <h1 className="text-xl font-bold tracking-tight">
                             SmartBudget
                         </h1>
 
-                        <p className="text-xs text-gray-500">
-                            50 / 30 / 20
+                        <p className="text-xs text-gray-500 uppercase tracking-[0.16em]">
+                            Your money, clearer
                         </p>
                     </div>
 
@@ -111,10 +111,10 @@ function Sidebar({
                                 className={({ isActive }) =>
                                     `
                                     flex items-center gap-3
-                                    px-4 py-3 rounded-xl
+                                    px-4 py-3 rounded-xl font-medium
                                     transition
                                     ${isActive
-                                        ? "bg-black text-white"
+                                        ? "bg-black text-white shadow-md"
                                         : "text-gray-600 hover:bg-gray-100"}
                                     `
                                 }
@@ -131,7 +131,7 @@ function Sidebar({
 
                     <button
                         onClick={logout}
-                        className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-xl font-medium"
                     >
                         <LogOut size={20} />
                         Logout

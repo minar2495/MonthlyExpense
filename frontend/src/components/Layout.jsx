@@ -26,7 +26,7 @@ function Layout() {
 
             <main className="md:ml-64">
 
-                <header className="h-16 bg-white border-b flex items-center px-4 md:px-8">
+                <header className="h-16 bg-white/80 backdrop-blur border-b flex items-center px-4 md:px-8">
 
                     <button
                         className="md:hidden mr-4"
@@ -38,8 +38,8 @@ function Layout() {
                     </button>
 
                     <div className="flex-1">
-                        <span className="font-semibold">
-                            Personal Finance
+                        <span className="text-sm uppercase tracking-[0.18em] text-gray-500">
+                            Personal Finance / Overview
                         </span>
                     </div>
 

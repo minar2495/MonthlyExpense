@@ -17,7 +17,7 @@ function BudgetCard({
         spent > budget;
 
     return (
-        <div className="bg-white border rounded-2xl p-5">
+        <div className="bg-white border rounded-2xl p-5 shadow-sm">
 
             <div className="flex justify-between">
 
@@ -44,7 +44,7 @@ function BudgetCard({
                         h-full rounded-full
                         ${exceeded
                             ? "bg-red-500"
-                            : "bg-black"}
+                            : "bg-[#9dc83e]"}
                     `}
                     style={{
                         width: `${progress}%`
