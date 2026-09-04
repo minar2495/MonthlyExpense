@@ -18,7 +18,13 @@ function Sidebar({
     open,
     setOpen
 }) {
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
+
+    const displayName =
+        user?.name || user?.email || "User";
+
+    const initial =
+        displayName.charAt(0).toUpperCase();
 
     const links = [
         {
@@ -128,6 +134,26 @@ function Sidebar({
                 </nav>
 
                 <div className="absolute bottom-5 left-4 right-4">
+
+                    <div className="mb-3 flex items-center gap-3 rounded-xl border bg-white/70 px-3 py-3">
+
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#c8f169] text-lg font-bold text-[#17211b]">
+                            {initial}
+                        </div>
+
+                        <div className="min-w-0">
+                            <p className="truncate font-semibold">
+                                {displayName}
+                            </p>
+
+                            {user?.name && user?.email && (
+                                <p className="truncate text-xs text-gray-500">
+                                    {user.email}
+                                </p>
+                            )}
+                        </div>
+
+                    </div>
 
                     <button
                         onClick={logout}
